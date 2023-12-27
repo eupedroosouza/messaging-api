@@ -1,0 +1,9 @@
+[versions]
+jedis = "5.1.0"
+
+[libraries]
+jedis = {module = "redis.clients:jedis", version.ref = "jedis"}
+
+[plugins]
+
+[bundles]
