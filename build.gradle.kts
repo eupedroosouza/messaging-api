@@ -18,7 +18,6 @@ repositories {
 dependencies {
 
     api(libs.jedis)
-    api(libs.gson)
 
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
