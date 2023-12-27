@@ -1,8 +1,10 @@
 [versions]
 jedis = "5.1.0"
+gson = "2.10.1"
 
 [libraries]
 jedis = {module = "redis.clients:jedis", version.ref = "jedis"}
+gson = {module = "com.google.code.gson:gson", version.ref = "gson"}
 
 [plugins]
 
