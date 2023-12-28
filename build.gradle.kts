@@ -30,6 +30,7 @@ java {
 tasks {
     withType<JavaCompile> {
         options.release = 8
+        options.encoding = "UTF-8"
     }
 
     test {
