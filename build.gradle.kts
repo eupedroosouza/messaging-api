@@ -1,9 +1,6 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
 plugins {
     java
     `java-library`
-    kotlin("jvm") version "1.9.22"
     `maven-publish`
     id("org.cadixdev.licenser") version "0.6.1"
 }
@@ -19,13 +16,8 @@ dependencies {
 
     api(libs.jedis)
 
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-
-    testImplementation(kotlin("test"))
-}
-
-kotlin {
-    jvmToolchain(8)
+    testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 java {
@@ -38,12 +30,6 @@ java {
 tasks {
     withType<JavaCompile> {
         options.release = 8
-    }
-
-    withType<KotlinCompile> {
-        kotlinOptions {
-            jvmTarget = "1.8"
-        }
     }
 
     test {
