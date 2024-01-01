@@ -159,7 +159,7 @@ public class RPCByteArrayChannelSender {
                 }
                 if (timeout > 0)
                     channelResponse.getWaitingResponse().get(timeout, TimeUnit.MILLISECONDS);
-                else channelResponse.getWaitingResponse().get();
+                else channelResponse.getWaitingResponse().join();
                 return channelResponse;
             } finally {
                 messagesWaitingResponse.remove(correlationId);
