@@ -22,8 +22,7 @@
 
 package com.github.eupedroosouza.messaging.sender.object;
 
-import com.github.eupedroosouza.messaging.connection.BaseJedisConnection;
-import com.github.eupedroosouza.messaging.connection.JedisConnectionProvider;
+import com.github.eupedroosouza.messaging.connection.JedisExecutions;
 import com.github.eupedroosouza.messaging.data.DataKeys;
 import com.github.eupedroosouza.messaging.exception.ChannelException;
 import com.github.eupedroosouza.messaging.message.MessageError;
@@ -44,7 +43,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
-public class RPCObjectMessageSender extends BaseJedisConnection {
+public class RPCObjectMessageSender {
 
     private static final Method SET_RESPONSE_METHOD;
 
@@ -56,19 +55,20 @@ public class RPCObjectMessageSender extends BaseJedisConnection {
         }
     }
 
+    private final JedisExecutions executions;
     private final String senderChannel;
     private final JedisPubSub responseReceiverPubSub;
     private final Thread responseReceiverThread;
 
     private final HashMap<UUID, RPCObjectChannelResponse<?>> messagesWaitingResponse = new HashMap<>();
 
-    public RPCObjectMessageSender(JedisConnectionProvider connectionProvider, String channel) {
-        this(connectionProvider, channel, (c, sc) -> {}, (c, sc) -> {});
+    public RPCObjectMessageSender(JedisExecutions executions, String channel) {
+        this(executions, channel, (c, sc) -> {}, (c, sc) -> {});
     }
 
-    public RPCObjectMessageSender(JedisConnectionProvider connectionProvider, String channel, BiConsumer<String, Integer> onResponseChannelSubscribe,
+    public RPCObjectMessageSender(JedisExecutions executions, String channel, BiConsumer<String, Integer> onResponseChannelSubscribe,
                                   BiConsumer<String, Integer> onResponseChannelUnsubscribe) {
-        super(connectionProvider);
+        this.executions = executions;
         this.senderChannel = (channel + ":sender");
         String receiverChannel = (channel + ":receiver");
         this.responseReceiverPubSub = new JedisPubSub() {
@@ -138,7 +138,7 @@ public class RPCObjectMessageSender extends BaseJedisConnection {
             }
         };
         this.responseReceiverThread = new Thread(() -> {
-            sub(responseReceiverPubSub, receiverChannel);
+            executions.sub(responseReceiverPubSub, receiverChannel);
         }, channel + "-response-receiver");
     }
 
@@ -174,7 +174,7 @@ public class RPCObjectMessageSender extends BaseJedisConnection {
                 object.addProperty(DataKeys.CLASS_NAME_KEY, messageObject.getClass().getName());
                 object.add(DataKeys.MESSAGE_KEY, messageObject.serialize());
                 object.addProperty(DataKeys.REMOTE_TIMEOUT_KEY, remoteTimeout);
-                long status = pub(senderChannel, GsonUtil.GSON.toJson(object));
+                long status = executions.pub(senderChannel, GsonUtil.GSON.toJson(object));
                 if (status == 0) {
                     channelResponse.setStatus(MessageStatus.NOT_SUBSCRIBERS_CHANNEL);
                     return channelResponse;

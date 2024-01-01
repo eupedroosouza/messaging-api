@@ -22,8 +22,7 @@
 
 package com.github.eupedroosouza.messaging.sender.object;
 
-import com.github.eupedroosouza.messaging.connection.BaseJedisConnection;
-import com.github.eupedroosouza.messaging.connection.JedisConnectionProvider;
+import com.github.eupedroosouza.messaging.connection.JedisExecutions;
 import com.github.eupedroosouza.messaging.data.DataKeys;
 import com.github.eupedroosouza.messaging.message.MessageObject;
 import com.github.eupedroosouza.messaging.message.status.MessageStatus;
@@ -33,12 +32,13 @@ import com.google.gson.JsonObject;
 
 import java.util.concurrent.CompletableFuture;
 
-public class ObjectMessageSender extends BaseJedisConnection {
+public class ObjectMessageSender {
 
+    private final JedisExecutions executions;
     private final String channel;
 
-    public ObjectMessageSender(JedisConnectionProvider connectionProvider, String channel) {
-        super(connectionProvider);
+    public ObjectMessageSender(JedisExecutions executions, String channel) {
+        this.executions = executions;
         this.channel = channel;
     }
 
@@ -47,7 +47,7 @@ public class ObjectMessageSender extends BaseJedisConnection {
             JsonObject object = new JsonObject();
             object.addProperty(DataKeys.CLASS_NAME_KEY, messageObject.getClass().getCanonicalName());
             object.add(DataKeys.MESSAGE_KEY, messageObject.serialize());
-            long status = pub(channel, GsonUtil.GSON.toJson(object));
+            long status = executions.pub(channel, GsonUtil.GSON.toJson(object));
             if (status == 0)
                 return MessageStatus.NOT_SUBSCRIBERS_CHANNEL;
             return MessageStatus.SUCCESS;

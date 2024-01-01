@@ -22,8 +22,7 @@
 
 package com.github.eupedroosouza.messaging.receiver.object;
 
-import com.github.eupedroosouza.messaging.connection.BaseJedisConnection;
-import com.github.eupedroosouza.messaging.connection.JedisConnectionProvider;
+import com.github.eupedroosouza.messaging.connection.JedisExecutions;
 import com.github.eupedroosouza.messaging.data.DataKeys;
 import com.github.eupedroosouza.messaging.message.MessageObject;
 import com.github.eupedroosouza.messaging.util.FutureUtil;
@@ -38,16 +37,17 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
-public abstract class RPCObjectMessageReceiver extends BaseJedisConnection {
+public abstract class RPCObjectMessageReceiver {
 
+    private final JedisExecutions executions;
     private final String receiverChannel;
 
     private final JedisPubSub receiverPubSub;
     private final Thread receiverThread;
 
-    public RPCObjectMessageReceiver(JedisConnectionProvider connectionProvider, String channel, BiConsumer<String, Integer> onReceiverSubscribe,
+    public RPCObjectMessageReceiver(JedisExecutions executions, String channel, BiConsumer<String, Integer> onReceiverSubscribe,
                                     BiConsumer<String, Integer> onReceiverUnsubscribe) {
-        super(connectionProvider);
+        this.executions = executions;
         String senderChannel = (channel + ":sender");
         this.receiverChannel = (channel + ":receiver");
         this.receiverPubSub = new JedisPubSub() {
@@ -114,7 +114,7 @@ public abstract class RPCObjectMessageReceiver extends BaseJedisConnection {
             }
         };
         this.receiverThread = new Thread(() -> {
-            sub(receiverPubSub, receiverChannel);
+            executions.sub(receiverPubSub, receiverChannel);
         }, channel + "-receiver");
     }
 
@@ -128,7 +128,7 @@ public abstract class RPCObjectMessageReceiver extends BaseJedisConnection {
     }
 
     private void send(JsonObject object) {
-        pub(receiverChannel, GsonUtil.GSON.toJson(object));
+        executions.pub(receiverChannel, GsonUtil.GSON.toJson(object));
     }
 
     public abstract <T extends MessageObject> CompletableFuture<? extends MessageObject> receive(T messageObject);

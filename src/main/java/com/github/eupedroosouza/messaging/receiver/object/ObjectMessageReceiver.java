@@ -22,8 +22,7 @@
 
 package com.github.eupedroosouza.messaging.receiver.object;
 
-import com.github.eupedroosouza.messaging.connection.BaseJedisConnection;
-import com.github.eupedroosouza.messaging.connection.JedisConnectionProvider;
+import com.github.eupedroosouza.messaging.connection.JedisExecutions;
 import com.github.eupedroosouza.messaging.data.DataKeys;
 import com.github.eupedroosouza.messaging.exception.ChannelException;
 import com.github.eupedroosouza.messaging.message.MessageObject;
@@ -35,17 +34,16 @@ import redis.clients.jedis.JedisPubSub;
 
 import java.util.function.Consumer;
 
-public abstract class ObjectMessageReceiver extends BaseJedisConnection {
+public abstract class ObjectMessageReceiver {
 
     private final JedisPubSub pubSub;
     private final Thread thread;
 
-    public ObjectMessageReceiver(JedisConnectionProvider connectionProvider, String channel) {
-        this(connectionProvider, channel, (i) -> {}, (i) -> {});
+    public ObjectMessageReceiver(JedisExecutions executions, String channel) {
+        this(executions, channel, (i) -> {}, (i) -> {});
     }
 
-    public ObjectMessageReceiver(JedisConnectionProvider connectionProvider, String channel, Consumer<Integer> onSubscribe, Consumer<Integer> onUnsubscribe) {
-        super(connectionProvider);
+    public ObjectMessageReceiver(JedisExecutions executions, String channel, Consumer<Integer> onSubscribe, Consumer<Integer> onUnsubscribe) {
         this.pubSub = new JedisPubSub() {
             @Override
             public void onMessage(String channel, String message) {
@@ -87,7 +85,7 @@ public abstract class ObjectMessageReceiver extends BaseJedisConnection {
             }
         };
         this.thread = new Thread(() -> {
-            sub(pubSub, channel);
+            executions.sub(pubSub, channel);
         });
     }
 

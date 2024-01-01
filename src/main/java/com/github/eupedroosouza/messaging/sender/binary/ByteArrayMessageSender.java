@@ -22,26 +22,26 @@
 
 package com.github.eupedroosouza.messaging.sender.binary;
 
-import com.github.eupedroosouza.messaging.connection.BaseJedisConnection;
-import com.github.eupedroosouza.messaging.connection.JedisConnectionProvider;
+import com.github.eupedroosouza.messaging.connection.JedisExecutions;
 import com.github.eupedroosouza.messaging.message.status.MessageStatus;
 import com.github.eupedroosouza.messaging.util.FutureUtil;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 
-public class ByteArrayMessageSender extends BaseJedisConnection {
+public class ByteArrayMessageSender {
 
+    private final JedisExecutions executions;
     private final byte[] byteChannel;
 
-    public ByteArrayMessageSender(JedisConnectionProvider connectionProvider, String channel) {
-        super(connectionProvider);
+    public ByteArrayMessageSender(JedisExecutions executions, String channel) {
+        this.executions = executions;
         this.byteChannel = channel.getBytes(StandardCharsets.UTF_8);
     }
 
     public CompletableFuture<MessageStatus> send(byte[] message) {
         return FutureUtil.exceptionAsyncFuture(() -> {
-            long status = pubBinary(byteChannel, message);
+            long status = executions.pubBinary(byteChannel, message);
             if (status == 0)
                 return MessageStatus.NOT_SUBSCRIBERS_CHANNEL;
             return MessageStatus.SUCCESS;

@@ -22,8 +22,7 @@
 
 package com.github.eupedroosouza.messaging.receiver.binary;
 
-import com.github.eupedroosouza.messaging.connection.BaseJedisConnection;
-import com.github.eupedroosouza.messaging.connection.JedisConnectionProvider;
+import com.github.eupedroosouza.messaging.connection.JedisExecutions;
 import com.github.eupedroosouza.messaging.data.DataKeys;
 import com.github.eupedroosouza.messaging.util.FutureUtil;
 import com.github.eupedroosouza.messaging.util.GsonUtil;
@@ -35,25 +34,24 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 
-public abstract class RPCByteArrayMessageReceiver extends BaseJedisConnection {
+public abstract class RPCByteArrayMessageReceiver {
 
+    private final JedisExecutions executions;
     private final byte[] binarySenderChannel;
     private final byte[] binaryReceiverChannel;
     private final BinaryJedisPubSub receiverPubSub;
     private final Thread receiverThread;
 
-    public RPCByteArrayMessageReceiver(JedisConnectionProvider connectionProvider, String channel) {
-        this(connectionProvider, channel, (s, i) -> {}, (s, i) -> {});
+    public RPCByteArrayMessageReceiver(JedisExecutions executions, String channel) {
+        this(executions, channel, (s, i) -> {}, (s, i) -> {});
     }
 
-    public RPCByteArrayMessageReceiver(JedisConnectionProvider connectionProvider, String channel,
+    public RPCByteArrayMessageReceiver(JedisExecutions executions, String channel,
                                        BiConsumer<String, Integer> onReceiverSubscribe, BiConsumer<String, Integer> onReceiverUnsubscribe) {
-        super(connectionProvider);
+        this.executions = executions;
         this.binarySenderChannel = (channel + ":sender").getBytes(StandardCharsets.UTF_8);
         this.binaryReceiverChannel = (channel + ":receiver").getBytes(StandardCharsets.UTF_8);
         this.receiverPubSub = new BinaryJedisPubSub() {
@@ -124,7 +122,7 @@ public abstract class RPCByteArrayMessageReceiver extends BaseJedisConnection {
             }
         };
         this.receiverThread = new Thread(() -> {
-            subBinary(receiverPubSub, binarySenderChannel);
+            executions.subBinary(receiverPubSub, binarySenderChannel);
         }, new String(binarySenderChannel, StandardCharsets.UTF_8) + "-receiver");
     }
 
@@ -138,7 +136,7 @@ public abstract class RPCByteArrayMessageReceiver extends BaseJedisConnection {
     }
 
     private void send(JsonObject object) {
-        pubBinary(binaryReceiverChannel, GsonUtil.GSON.toJson(object).getBytes(StandardCharsets.UTF_8));
+        executions.pubBinary(binaryReceiverChannel, GsonUtil.GSON.toJson(object).getBytes(StandardCharsets.UTF_8));
     }
 
     public abstract CompletableFuture<byte[]> receive(byte[] message);

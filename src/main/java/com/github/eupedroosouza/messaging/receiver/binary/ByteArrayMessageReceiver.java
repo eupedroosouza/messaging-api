@@ -22,23 +22,22 @@
 
 package com.github.eupedroosouza.messaging.receiver.binary;
 
-import com.github.eupedroosouza.messaging.connection.BaseJedisConnection;
-import com.github.eupedroosouza.messaging.connection.JedisConnectionProvider;
+import com.github.eupedroosouza.messaging.connection.JedisExecutions;
 import redis.clients.jedis.BinaryJedisPubSub;
 
+import java.nio.charset.StandardCharsets;
 import java.util.function.Consumer;
 
-public abstract class ByteArrayMessageReceiver extends BaseJedisConnection {
+public abstract class ByteArrayMessageReceiver {
 
     private final BinaryJedisPubSub pubSub;
     private final Thread thread;
 
-    public ByteArrayMessageReceiver(JedisConnectionProvider connectionProvider, String channel) {
-        this(connectionProvider, channel, (i) -> {}, (i) -> {});
+    public ByteArrayMessageReceiver(JedisExecutions executions, String channel) {
+        this(executions, channel, (i) -> {}, (i) -> {});
     }
 
-    public ByteArrayMessageReceiver(JedisConnectionProvider connectionProvider, String channel, Consumer<Integer> onSubscribe, Consumer<Integer> onUnsubscribe) {
-        super(connectionProvider);
+    public ByteArrayMessageReceiver(JedisExecutions executions, String channel, Consumer<Integer> onSubscribe, Consumer<Integer> onUnsubscribe) {
         this.pubSub = new BinaryJedisPubSub() {
             @Override
             public void onMessage(byte[] channel, byte[] message) {
@@ -56,7 +55,7 @@ public abstract class ByteArrayMessageReceiver extends BaseJedisConnection {
             }
         };
         thread = new Thread(() -> {
-            subBinary(pubSub, channel);
+            executions.subBinary(pubSub, channel.getBytes(StandardCharsets.UTF_8));
         }, channel + "-receiver");
     }
 

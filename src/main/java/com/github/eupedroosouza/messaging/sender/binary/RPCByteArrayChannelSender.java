@@ -22,8 +22,7 @@
 
 package com.github.eupedroosouza.messaging.sender.binary;
 
-import com.github.eupedroosouza.messaging.connection.BaseJedisConnection;
-import com.github.eupedroosouza.messaging.connection.JedisConnectionProvider;
+import com.github.eupedroosouza.messaging.connection.JedisExecutions;
 import com.github.eupedroosouza.messaging.data.DataKeys;
 import com.github.eupedroosouza.messaging.exception.EmptyResponseException;
 import com.github.eupedroosouza.messaging.message.MessageError;
@@ -43,17 +42,18 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
-public class RPCByteArrayChannelSender extends BaseJedisConnection {
+public class RPCByteArrayChannelSender {
 
+    private final JedisExecutions executions;
     private final byte[] binarySenderChannel;
     private final BinaryJedisPubSub responseReceiverPubSub;
     private final Thread responseReceiverThread;
 
     private final HashMap<UUID, RPCByteArrayChannelResponse> messagesWaitingResponse = new HashMap<>();
 
-    public RPCByteArrayChannelSender(JedisConnectionProvider connectionProvider, String channel,
+    public RPCByteArrayChannelSender(JedisExecutions executions, String channel,
                                      BiConsumer<String, Integer> onResponseChannelSubscribe, BiConsumer<String, Integer> onResponseChannelUnsubscribe) {
-        super(connectionProvider);
+        this.executions = executions;
         this.binarySenderChannel = (channel + ":sender").getBytes(StandardCharsets.UTF_8);
         byte[] binaryReceiverChannel = (channel + ":receiver").getBytes(StandardCharsets.UTF_8);
         this.responseReceiverPubSub = new BinaryJedisPubSub() {
@@ -113,7 +113,7 @@ public class RPCByteArrayChannelSender extends BaseJedisConnection {
             }
         };
         this.responseReceiverThread = new Thread(() -> {
-            subBinary(responseReceiverPubSub, binaryReceiverChannel);
+            executions.subBinary(responseReceiverPubSub, binaryReceiverChannel);
         }, channel + "-response-receiver");
     }
 
@@ -148,7 +148,7 @@ public class RPCByteArrayChannelSender extends BaseJedisConnection {
                 object.addProperty(DataKeys.CORRELATION_ID_KEY, correlationId.toString());
                 object.addProperty(DataKeys.MESSAGE_KEY, Base64.getEncoder().encodeToString(message));
                 object.addProperty(DataKeys.REMOTE_TIMEOUT_KEY, remoteTimeout);
-                long status = pubBinary(binarySenderChannel, GsonUtil.GSON.toJson(object).getBytes(StandardCharsets.UTF_8));
+                long status = executions.pubBinary(binarySenderChannel, GsonUtil.GSON.toJson(object).getBytes(StandardCharsets.UTF_8));
                 if (status == 0)  {
                     channelResponse.setStatus(MessageStatus.NOT_SUBSCRIBERS_CHANNEL);
                     return channelResponse;
