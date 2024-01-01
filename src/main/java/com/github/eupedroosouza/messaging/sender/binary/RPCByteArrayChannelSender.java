@@ -51,6 +51,10 @@ public class RPCByteArrayChannelSender {
 
     private final HashMap<UUID, RPCByteArrayChannelResponse> messagesWaitingResponse = new HashMap<>();
 
+    public RPCByteArrayChannelSender(JedisExecutions executions, String channel) {
+        this(executions, channel, (c, sc) -> {}, (c, sc) -> {});
+    }
+
     public RPCByteArrayChannelSender(JedisExecutions executions, String channel,
                                      BiConsumer<String, Integer> onResponseChannelSubscribe, BiConsumer<String, Integer> onResponseChannelUnsubscribe) {
         this.executions = executions;

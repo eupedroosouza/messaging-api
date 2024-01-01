@@ -45,6 +45,10 @@ public abstract class RPCObjectMessageReceiver {
     private final JedisPubSub receiverPubSub;
     private final Thread receiverThread;
 
+    public RPCObjectMessageReceiver(JedisExecutions executions, String channel) {
+        this(executions, channel, (c, sc) -> {}, (c, sc) -> {});
+    }
+
     public RPCObjectMessageReceiver(JedisExecutions executions, String channel, BiConsumer<String, Integer> onReceiverSubscribe,
                                     BiConsumer<String, Integer> onReceiverUnsubscribe) {
         this.executions = executions;
